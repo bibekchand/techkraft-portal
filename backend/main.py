@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 import jwt
@@ -22,6 +23,14 @@ auth = OAuth2PasswordBearer(tokenUrl="login")
 password_hash = PasswordHash.recommended()
 app = FastAPI()
 sqlite_url = "sqlite:///database.db"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
