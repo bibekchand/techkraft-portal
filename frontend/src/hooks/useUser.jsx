@@ -1,4 +1,4 @@
-import { loginUser } from "../services/userServices.tsx"
+import { loginUser, signUpUser } from "../services/userServices.tsx"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router";
 export default function useUser() {
@@ -10,7 +10,8 @@ export default function useUser() {
             const result = await loginUser(email, password)
             const token = result.data.access_token
             localStorage.setItem("token", token)
-            toast.success("Logged In Successfully")
+            navigate("/")
+            toast.success("Logged in successfully")
         }
         catch (error) {
             console.log("Error=>", error)
@@ -20,5 +21,18 @@ export default function useUser() {
                 toast.error("Unknown error")
         }
     }
-    return { login }
+    async function signUp(formData) {
+        const email = formData.get("email")
+        const password = formData.get("password")
+        try {
+            await signUpUser(email, password)
+        }
+        catch (error) {
+            if (error?.response?.status === 409)
+                toast.error("Username already taken")
+            else
+                toast.error("Unkown error")
+        }
+    }
+    return { login, signUp }
 }

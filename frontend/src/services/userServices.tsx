@@ -14,3 +14,11 @@ export const loginUser = async (username: string, password: string) => {
         }
     )
 }
+
+export const signUpUser = async (email: string, password: string) => {
+    return axios
+        .post(`${baseURL}/sign_up`, {
+            email: email,
+            password: password,
+        })
+}

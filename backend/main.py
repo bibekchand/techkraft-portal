@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from enum import Enum
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,11 +11,6 @@ from pydantic import BaseModel, EmailStr
 from pwdlib import PasswordHash
 
 SECRET_KEY = "f133813277fbfcad6f41ced756c52776fa6505a5c3078b60754d4aa5cc03ade3"
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 
 ALGORITHM = "HS256"
@@ -61,14 +57,32 @@ def on_startup():
     create_db_tables()
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
 
 
+class UserRole(str, Enum):
+    Admin = "admin"
+    Customer = "user"
+    Seller = "seller"
+
+
 class UserTable(SQLModel, table=True):
     email: str = Field(primary_key=True)
     password: str
+    role: UserRole
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    role: UserRole
 
 
 def verifyUserFromDatabase(user: UserLogin, session: SessionDep):
@@ -97,11 +111,6 @@ def handleAuthentication(token, session):
     if not user:
         raise credentials_exception
     return user
-
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8)
 
 
 @app.get("/get_current_user")
