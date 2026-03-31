@@ -132,15 +132,5 @@ Authorization: Bearer <token>
 * React
 * Axios
 * Vite / Create React App
-
 ---
-
-## 📌 Notes
-
-* Make sure the backend is running before starting the frontend.
-* Enable CORS in FastAPI if frontend and backend run on different ports.
-* Do not commit sensitive data (tokens, secrets, `.env` files).
-
-```
-```
 
