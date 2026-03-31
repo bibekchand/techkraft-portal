@@ -1,7 +1,10 @@
-import { loginUser, signUpUser } from "../services/userServices.tsx"
+import { loginUser, signUpUser, getUserInfo, deleteFavorite, addFavorite } from "../services/userServices.tsx"
+import { useState, useEffect } from "react"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router";
 export default function useUser() {
+    const [userEmail, setUserEmail] = useState("NA")
+    const [userRole, setUserRole] = useState("NA")
     const navigate = useNavigate();
     async function login(formData) {
         const email = formData.get("email")
@@ -10,8 +13,8 @@ export default function useUser() {
             const result = await loginUser(email, password)
             const token = result.data.access_token
             localStorage.setItem("token", token)
-            navigate("/")
             toast.success("Logged in successfully")
+            navigate("/")
         }
         catch (error) {
             console.log("Error=>", error)
@@ -24,8 +27,10 @@ export default function useUser() {
     async function signUp(formData) {
         const email = formData.get("email")
         const password = formData.get("password")
+        const role = formData.get("role")
         try {
-            await signUpUser(email, password)
+            await signUpUser(email, password, role)
+            navigate("/login")
         }
         catch (error) {
             if (error?.response?.status === 409)
@@ -34,5 +39,35 @@ export default function useUser() {
                 toast.error("Unkown error")
         }
     }
-    return { login, signUp }
+    async function fetchUserInfo() {
+        try {
+            const result = await getUserInfo()
+            setUserEmail(result.data.email)
+            setUserRole(result.data.role)
+        }
+        catch (error) {
+            console.log("Error=>", error)
+        }
+    }
+    useEffect(() => {
+        fetchUserInfo()
+    }, [])
+    async function removeUserFavorite(id) {
+        console.log(id)
+        try {
+            await deleteFavorite(id)
+        }
+        catch (error) {
+            console.log(error)
+        }
+    }
+    async function addUserFavorite(id) {
+        try {
+            await addFavorite(id)
+        }
+        catch (error) {
+            console.log("Error")
+        }
+    }
+    return { login, signUp, userEmail, userRole, removeUserFavorite, addUserFavorite }
 }

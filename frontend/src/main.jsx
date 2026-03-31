@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { createRoot } from 'react-dom/client'
 import Login from "./pages/Login.jsx"
-import DashBoard from "./pages/Home.jsx"
+import DashBoard from "./pages/DashBoard.jsx"
 import Register from "./pages/Register.jsx"
 import './index.css'
 

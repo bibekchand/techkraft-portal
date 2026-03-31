@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy import event
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
@@ -52,6 +53,13 @@ def create_db_tables():
     SQLModel.metadata.create_all(engine)
 
 
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
 @app.on_event("startup")
 def on_startup():
     create_db_tables()
@@ -79,10 +87,25 @@ class UserTable(SQLModel, table=True):
     role: UserRole
 
 
+class UserInfo(BaseModel):
+    email: str
+    role: UserRole
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     role: UserRole
+
+
+class Property(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+
+
+class Favorites(SQLModel, table=True):
+    user_email: EmailStr = Field(
+        foreign_key="usertable.email", primary_key=True)
+    property_id: int = Field(foreign_key="property.id", primary_key=True)
 
 
 def verifyUserFromDatabase(user: UserLogin, session: SessionDep):
@@ -113,7 +136,7 @@ def handleAuthentication(token, session):
     return user
 
 
-@app.get("/get_current_user")
+@app.get("/get_current_user", response_model=UserInfo)
 def get_current_user(token: Annotated[str, Depends(auth)], session: SessionDep):
     user = handleAuthentication(token, session)
     if user:
@@ -146,3 +169,53 @@ def login(user_form: Annotated[OAuth2PasswordRequestForm, Depends()], session: S
         )
     access_token = create_access_token(data={"sub": user.email})
     return Token(access_token=access_token, token_type="bearer")
+
+
+@app.post("/add_favorite")
+def add_favorite(token: Annotated[str, Depends(auth)],
+                 session: SessionDep, id: int):
+    user = handleAuthentication(token, session)
+    user_email = user.email
+    favorite = Favorites(user_email=user_email, property_id=id)
+    exists = session.get(Favorites, (user_email, id))
+    if exists:
+        raise HTTPException(status_code=409, detail="Already Favorite")
+    session.add(favorite)
+    session.commit()
+    session.refresh(favorite)
+    return {"message": "Added successfully"}
+
+
+@app.get("/get_user_favorites")
+def get_all_user_favorites(token: Annotated[str, Depends(auth)],
+                           session: SessionDep) -> list[Favorites]:
+    user = handleAuthentication(token, session)
+    user_email = user.email
+    statement = select(Favorites).where(Favorites.user_email == user_email)
+    favorite_properties = session.exec(statement).all()
+    return favorite_properties
+
+
+@app.delete("/delete_favorite")
+def delete_favorite(token: Annotated[str, Depends(auth)],
+                    session: SessionDep, id: int):
+    user = handleAuthentication(token, session)
+    user_email = user.email
+    statement = select(Favorites).where(
+        Favorites.user_email == user_email, Favorites.property_id == id)
+    favorite = session.exec(statement).first()
+    if favorite:
+        session.delete(favorite)
+        session.commit()
+        return {"message": "Deleted successfully"}
+    else:
+        return {"message": "Object not found"}
+
+
+@app.get("/get_all_properties")
+def get_all_properties(token: Annotated[str, Depends(auth)],
+                       session: SessionDep) -> list[Property]:
+    user = handleAuthentication(token, session)
+    properties = session.query(Property).all()
+    print(properties)
+    return properties
