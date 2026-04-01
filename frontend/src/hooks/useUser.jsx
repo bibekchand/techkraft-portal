@@ -1,5 +1,5 @@
 import { loginUser, signUpUser, getUserInfo, deleteFavorite, addFavorite } from "../services/userServices.tsx"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 import { useNavigate } from "react-router";
 export default function useUser() {
@@ -34,7 +34,7 @@ export default function useUser() {
         }
         catch (error) {
             if (error?.response?.status === 409)
-                toast.error("Username already taken")
+                toast.error("This account has been been already registered")
             else
                 toast.error("Unkown error")
         }
@@ -47,15 +47,19 @@ export default function useUser() {
         }
         catch (error) {
             console.log("Error=>", error)
+            if (error?.response?.status === 401) {
+                toast.error("Token expired login again")
+            }
+            else {
+                toast.error("Unkown error")
+            }
         }
     }
-    useEffect(() => {
-        fetchUserInfo()
-    }, [])
     async function removeUserFavorite(id) {
         console.log(id)
         try {
             await deleteFavorite(id)
+            navigate(0)
         }
         catch (error) {
             console.log(error)
@@ -64,10 +68,17 @@ export default function useUser() {
     async function addUserFavorite(id) {
         try {
             await addFavorite(id)
+            navigate(0)
         }
         catch (error) {
-            console.log("Error")
+            if (error?.response?.status === 409) {
+                toast.error("Already Favorite")
+            }
         }
     }
-    return { login, signUp, userEmail, userRole, removeUserFavorite, addUserFavorite }
+    async function signOut() {
+        localStorage.clear()
+        navigate("/login")
+    }
+    return { login, signUp, userEmail, userRole, removeUserFavorite, addUserFavorite, signOut, fetchUserInfo }
 }

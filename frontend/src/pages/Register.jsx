@@ -4,7 +4,7 @@ export default function Register() {
     const { signUp } = useUser()
     return (
         <>
-            <div className="text-2xl text-center">Give me all your data</div>
+            <div className="text-2xl text-center">Register a account</div>
             <div className="flex p-2 justify-center">
                 <form action={signUp} className="flex flex-col justify-center gap-2">
                     <input
