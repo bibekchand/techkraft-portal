@@ -25,3 +25,6 @@ npm run dev
 ```
 Frontend server: http://localhost:5173
 
+
+Note:
+create some properties before checking out
