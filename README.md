@@ -1,4 +1,4 @@
-## How to setup run project?
+## How to setup/run project?
 First clone the project
 ```
 git clone https://github.com/bibekchand/techkraft-portal

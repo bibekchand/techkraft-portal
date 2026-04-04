@@ -63,6 +63,14 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 @app.on_event("startup")
 def on_startup():
     create_db_tables()
+    session = next(get_session())
+    property1 = Property(id=1)
+    property2 = Property(id=3)
+    session.add(property1)
+    session.add(property2)
+    session.commit()
+    session.refresh(property1)
+    session.refresh(property2)
 
 
 class Token(BaseModel):
@@ -215,7 +223,7 @@ def delete_favorite(token: Annotated[str, Depends(auth)],
 @app.get("/get_all_properties")
 def get_all_properties(token: Annotated[str, Depends(auth)],
                        session: SessionDep) -> list[Property]:
-    user = handleAuthentication(token, session)
+    _ = handleAuthentication(token, session)
     properties = session.query(Property).all()
     print(properties)
     return properties
